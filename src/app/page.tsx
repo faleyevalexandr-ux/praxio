@@ -172,36 +172,74 @@ export default function LandingPage() {
 
       {/* Pricing */}
       <section id="pricing" className="px-6 py-24">
-        <div className="max-w-xl mx-auto text-center">
+        <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-slate-900 mb-4">Simple, honest pricing</h2>
-          <p className="text-slate-600 mb-12">One plan. Everything included.</p>
-          <div className="border-2 border-blue-600 rounded-2xl p-10">
-            <div className="text-5xl font-bold text-slate-900 mb-2">
-              $29<span className="text-2xl text-slate-500 font-normal">/month</span>
+          <p className="text-slate-600 mb-12">One plan. Everything included. No surprises.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Monthly */}
+            <div className="border border-slate-200 rounded-2xl p-8 text-left">
+              <div className="text-sm font-medium text-slate-500 mb-4 uppercase tracking-wide">Monthly</div>
+              <div className="text-4xl font-bold text-slate-900 mb-1">
+                $29<span className="text-xl text-slate-500 font-normal">/month</span>
+              </div>
+              <p className="text-slate-500 text-sm mb-6">Billed monthly · Cancel anytime</p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  'Unlimited clients',
+                  'Unlimited appointments',
+                  'Automatic email reminders',
+                  'Client notes & tags',
+                  'HIPAA-friendly storage',
+                  'Email support',
+                ].map((f) => (
+                  <li key={f} className="flex items-center gap-3 text-slate-700 text-sm">
+                    <CheckCircle className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/login"
+                className="block w-full border border-blue-600 text-blue-600 py-3 rounded-xl font-semibold text-center hover:bg-blue-50 transition-colors"
+              >
+                Start free trial
+              </Link>
             </div>
-            <p className="text-slate-600 mb-8">14-day free trial · No credit card required</p>
-            <ul className="text-left space-y-3 mb-10">
-              {[
-                'Unlimited clients',
-                'Unlimited appointments',
-                'Automatic email reminders (24h before)',
-                'Client notes & tags',
-                'HIPAA-friendly data storage',
-                'Email support',
-              ].map((f) => (
-                <li key={f} className="flex items-center gap-3 text-slate-700">
-                  <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/login"
-              className="block w-full bg-blue-600 text-white py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 transition-colors"
-            >
-              Start free trial
-            </Link>
+
+            {/* Annual — best value */}
+            <div className="border-2 border-blue-600 rounded-2xl p-8 text-left relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-semibold px-4 py-1 rounded-full">
+                BEST VALUE — SAVE $120
+              </div>
+              <div className="text-sm font-medium text-blue-600 mb-4 uppercase tracking-wide">Annual</div>
+              <div className="text-4xl font-bold text-slate-900 mb-1">
+                $19<span className="text-xl text-slate-500 font-normal">/month</span>
+              </div>
+              <p className="text-slate-500 text-sm mb-6">$228 billed once per year</p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  'Unlimited clients',
+                  'Unlimited appointments',
+                  'Automatic email reminders',
+                  'Client notes & tags',
+                  'HIPAA-friendly storage',
+                  'Email support',
+                ].map((f) => (
+                  <li key={f} className="flex items-center gap-3 text-slate-700 text-sm">
+                    <CheckCircle className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/login"
+                className="block w-full bg-blue-600 text-white py-3 rounded-xl font-semibold text-center hover:bg-blue-700 transition-colors"
+              >
+                Start free trial
+              </Link>
+            </div>
           </div>
+          <p className="text-slate-500 text-sm mt-6">14-day free trial on both plans · No credit card required</p>
         </div>
       </section>
 
