@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/api/stripe/webhook']
 const DASHBOARD_PATHS = ['/dashboard', '/clients', '/appointments', '/billing', '/settings']
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -34,14 +34,12 @@ export async function proxy(request: NextRequest) {
   const isPublic = PUBLIC_PATHS.some((p) => path === p) || path.startsWith('/seo/')
   const isDashboard = DASHBOARD_PATHS.some((p) => path.startsWith(p))
 
-  // Unauthenticated user hitting a dashboard route → redirect to login
   if (!user && isDashboard) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // Authenticated user hitting login → redirect to dashboard
   if (user && path === '/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
