@@ -8,6 +8,13 @@ const SEO_SLUGS = [
   'theranest-alternative',
   'practice-better-alternative',
   'counseling-software-for-solo-therapists',
+  'jane-app-alternative',
+  'owl-practice-alternative',
+  'power-diary-alternative',
+  'carepatron-alternative',
+  'quenza-alternative',
+  'appointment-reminder-software-for-therapists',
+  'private-practice-software-without-insurance-billing',
 ]
 
 export default function sitemap(): MetadataRoute.Sitemap {
