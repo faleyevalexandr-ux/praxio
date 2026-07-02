@@ -111,7 +111,7 @@ export default function LandingPage() {
             />
             <FeatureCard
               icon={<Shield className="w-6 h-6 text-blue-600" />}
-              title="HIPAA-friendly"
+              title="Encrypted & private"
               desc="Data encrypted at rest and in transit. Hosted on Supabase (SOC 2 Type II). We never sell your data."
             />
             <FeatureCard
@@ -189,7 +189,7 @@ export default function LandingPage() {
                   'Unlimited appointments',
                   'Automatic email reminders',
                   'Client notes & tags',
-                  'HIPAA-friendly storage',
+                  'Encrypted, private storage',
                   'Email support',
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-3 text-slate-700 text-sm">
@@ -222,7 +222,7 @@ export default function LandingPage() {
                   'Unlimited appointments',
                   'Automatic email reminders',
                   'Client notes & tags',
-                  'HIPAA-friendly storage',
+                  'Encrypted, private storage',
                   'Email support',
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-3 text-slate-700 text-sm">

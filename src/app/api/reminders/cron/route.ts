@@ -46,7 +46,6 @@ export async function GET(req: NextRequest) {
   for (const reminder of reminders ?? []) {
     const appt = (reminder as any).appointments
     const client = appt?.clients
-    const therapist = appt?.profiles
 
     if (!client?.email) {
       // Skip — no email, mark as skipped
@@ -62,9 +61,14 @@ export async function GET(req: NextRequest) {
       hour: 'numeric', minute: '2-digit', hour12: true
     })
 
+    // PHI minimization: reminder emails deliberately carry NO protected health
+    // information — no client name, no appointment title, no "therapy"/"session"
+    // wording, no practice name that could reveal a mental-health context. Only
+    // a neutral date/time. Keeps the email channel out of scope for PHI so a
+    // BAA with the email provider is not required. Details live behind login.
     const subject = reminder.type === '24h'
-      ? `Reminder: Your therapy session tomorrow at ${timeStr}`
-      : `Reminder: Your therapy session in 1 hour`
+      ? `Appointment reminder for tomorrow`
+      : `Appointment reminder — in 1 hour`
 
     const html = `
       <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 24px;">
@@ -72,17 +76,15 @@ export async function GET(req: NextRequest) {
           <h2 style="margin: 0; font-size: 18px;">Appointment Reminder</h2>
         </div>
         <div style="border: 1px solid #e2e8f0; border-top: none; padding: 24px; border-radius: 0 0 8px 8px;">
-          <p style="color: #475569; margin: 0 0 16px;">Hi ${client.full_name},</p>
+          <p style="color: #475569; margin: 0 0 16px;">Hi there,</p>
           <p style="color: #475569; margin: 0 0 24px;">
-            This is a reminder of your upcoming therapy session:
+            This is a reminder of your upcoming appointment:
           </p>
           <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
-            <p style="margin: 0 0 8px; color: #0f172a;"><strong>${appt.title}</strong></p>
-            <p style="margin: 0; color: #64748b; font-size: 14px;">${dateStr} at ${timeStr}</p>
-            ${therapist?.practice_name ? `<p style="margin: 4px 0 0; color: #64748b; font-size: 14px;">${therapist.practice_name}</p>` : ''}
+            <p style="margin: 0; color: #0f172a; font-size: 15px;"><strong>${dateStr} at ${timeStr}</strong></p>
           </div>
           <p style="color: #94a3b8; font-size: 13px; margin: 0;">
-            If you need to reschedule, please contact your therapist.
+            If you need to reschedule, please contact your provider directly.
           </p>
         </div>
         <p style="color: #cbd5e1; font-size: 11px; text-align: center; margin-top: 16px;">
@@ -93,7 +95,7 @@ export async function GET(req: NextRequest) {
 
     try {
       await resend.emails.send({
-        from: `${therapist?.practice_name ?? 'Your Therapist'} <reminders@praxio.app>`,
+        from: `Appointments <reminders@praxio.app>`,
         to: client.email,
         subject,
         html,

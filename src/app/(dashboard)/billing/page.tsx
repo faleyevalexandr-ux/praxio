@@ -64,7 +64,7 @@ export default async function BillingPage() {
             'Unlimited appointments',
             'Automatic email reminders (24h before)',
             'Client notes & tags',
-            'HIPAA-friendly data storage',
+            'Encrypted, private client data',
             'Email support',
           ].map((f) => (
             <li key={f} className="flex items-center gap-3 text-slate-700 text-sm">
