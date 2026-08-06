@@ -45,7 +45,7 @@ person-osint "Иван Петров" --city Москва --company "Яндекс
 
 ```bash
 cd person-osint
-npm install
+npm ci          # или npm install, если lock-файла нет
 npm run build
 node dist/cli.js "Иван Петров" --city Москва
 ```

@@ -18,16 +18,21 @@
   },
   "files": [
     "dist",
+    "scripts",
     "README.md"
   ],
   "engines": {
     "node": ">=22.6.0"
   },
   "scripts": {
+    "preflight": "node scripts/preflight.mjs",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prestart": "npm run preflight",
     "start": "node --experimental-strip-types src/cli.ts",
+    "pretest": "npm run preflight",
     "test": "node --experimental-strip-types --test test/*.test.ts",
+    "presources": "npm run preflight",
     "sources": "node --experimental-strip-types src/cli.ts sources"
   },
   "dependencies": {
