@@ -7,6 +7,7 @@ import { estimateDistinctPeople } from '../core/score.ts';
 import { buildNameVariants } from '../core/text.ts';
 import { selectSources } from '../sources/index.ts';
 import type { HttpLike, Report, Source, SourceRunReport, SourceYield, Target } from '../types.ts';
+import { DryRunHttpClient } from '../core/dry-run.ts';
 import { enrichFindings } from './enrich.ts';
 
 export interface InvestigateOptions {
@@ -24,7 +25,9 @@ export interface InvestigateOptions {
 export async function investigate(target: Target, options: InvestigateOptions = {}): Promise<Report> {
   const config: RuntimeConfig = { ...DEFAULT_CONFIG, ...options.config };
   const log = createLogger(config.logLevel);
-  const http: HttpLike = options.http ?? new HttpClient(config, log);
+  const dryRun = config.dryRun ? new DryRunHttpClient() : undefined;
+  const http: HttpLike = options.http ?? dryRun ?? new HttpClient(config, log);
+  if (dryRun) log.info('Сухой прогон: запросы записываются, но не отправляются.');
   const names = buildNameVariants(target.fullName);
   const startedAt = new Date().toISOString();
   const startedMs = Date.now();
@@ -108,6 +111,7 @@ export async function investigate(target: Target, options: InvestigateOptions = 
     generatedAt: startedAt,
     durationMs: Date.now() - startedMs,
     sources: runReports.sort((a, b) => a.id.localeCompare(b.id)),
+    ...(dryRun ? { plannedRequests: dryRun.requests } : {}),
     profiles,
     documents,
     facts,

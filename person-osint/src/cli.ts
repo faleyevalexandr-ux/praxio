@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { DEFAULT_CONFIG, TOOL_NAME, TOOL_VERSION, type RuntimeConfig } from './config.ts';
+import { describeQuery, groupByHost } from './core/dry-run.ts';
 import { ALL_SOURCES, unknownSourceIds } from './sources/index.ts';
 import { investigate } from './pipeline/run.ts';
 import { renderMarkdown } from './report/markdown.ts';
@@ -36,6 +37,7 @@ ${TOOL_NAME} v${TOOL_VERSION} — сбор публичных сведений �
   --timeout <мс>          Таймаут запроса (${DEFAULT_CONFIG.timeoutMs})
   --max-results <n>       Предел находок с одного источника (${DEFAULT_CONFIG.maxResultsPerSource})
   --no-enrich             Не догружать найденные страницы
+  --dry-run               Показать, какие запросы ушли бы в сеть, и ничего не отправлять
   --cache                 Кэшировать ответы на диск (в кэше будут персональные данные)
   --ignore-robots         Не учитывать robots.txt при обходе веб-страниц
   --verbose               Подробный лог в stderr
@@ -74,6 +76,7 @@ async function main(): Promise<number> {
       timeout: { type: 'string' },
       'max-results': { type: 'string' },
       'no-enrich': { type: 'boolean', default: false },
+      'dry-run': { type: 'boolean', default: false },
       cache: { type: 'boolean', default: false },
       'ignore-robots': { type: 'boolean', default: false },
       verbose: { type: 'boolean', default: false },
@@ -118,6 +121,7 @@ async function main(): Promise<number> {
   const config: Partial<RuntimeConfig> = {
     logLevel: values.quiet ? 'error' : values.verbose ? 'debug' : 'info',
     cache: values.cache,
+    dryRun: values['dry-run'],
     respectRobots: !values['ignore-robots'],
     ...numeric('concurrency', values.concurrency),
     ...numeric('perHostDelayMs', values.delay),
@@ -143,6 +147,11 @@ async function main(): Promise<number> {
     ...(only.length ? { only } : {}),
     ...(skip.length ? { skip } : {}),
   });
+
+  if (report.plannedRequests) {
+    printPlan(report.plannedRequests);
+    return 0;
+  }
 
   const markdown = renderMarkdown(report, threshold);
   const json = JSON.stringify(report, null, 2);
@@ -179,6 +188,24 @@ async function main(): Promise<number> {
   }
 
   return 0;
+}
+
+function printPlan(requests: string[]): void {
+  const groups = groupByHost(requests);
+  process.stdout.write(`\nСухой прогон: ${requests.length} запросов к ${groups.length} хостам, ничего не отправлено.\n`);
+
+  for (const { host, urls } of groups) {
+    process.stdout.write(`\n${host} (${urls.length})\n`);
+    for (const url of urls) {
+      const query = describeQuery(url);
+      process.stdout.write(query ? `  ${query}\n` : `  ${url}\n`);
+    }
+  }
+
+  process.stdout.write(
+    '\nМногошаговые источники показывают только первый шаг: следующий запрос\n' +
+      'строится по данным, которых в сухом прогоне нет.\n',
+  );
 }
 
 function printSources(): void {

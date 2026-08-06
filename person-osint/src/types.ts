@@ -150,6 +150,8 @@ export interface Report {
   documents: DocumentHit[];
   facts: Fact[];
   ambiguity: Ambiguity;
+  /** Заполняется только в сухом прогоне: список запросов, которые были бы отправлены. */
+  plannedRequests?: string[];
   stats: {
     totalProfiles: number;
     totalDocuments: number;

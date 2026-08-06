@@ -38,7 +38,7 @@ export async function searchDuckDuckGo(
       });
       if (!response.ok) continue;
 
-      const results = endpoint === HTML_ENDPOINT
+      const { results, recognized } = endpoint === HTML_ENDPOINT
         ? parseHtmlResults(response.body)
         : parseLiteResults(response.body);
 
@@ -46,6 +46,15 @@ export async function searchDuckDuckGo(
         log.debug(`ddg «${query}» → ${results.length}`);
         return results.slice(0, limit);
       }
+
+      // Страница разобралась, просто ничего не нашлось. Для узких site:-дорков
+      // это обычный исход, и дублировать запрос на lite незачем — иначе трафик
+      // удваивается на ровном месте и упирается в ограничение частоты.
+      if (recognized) {
+        log.debug(`ddg «${query}» → пусто`);
+        return [];
+      }
+      log.debug(`ddg «${query}»: вёрстка не распознана, пробую lite`);
     } catch (error) {
       log.debug(`ddg «${query}» ошибка: ${(error as Error).message}`);
     }
@@ -54,7 +63,14 @@ export async function searchDuckDuckGo(
   return [];
 }
 
-function parseHtmlResults(html: string): SearchResult[] {
+/** Разобранная выдача плюс признак того, что вёрстка вообще была узнана. */
+export interface ParsedSearchPage {
+  results: SearchResult[];
+  /** false — страница не похожа на выдачу: заглушка, капча, смена вёрстки. */
+  recognized: boolean;
+}
+
+export function parseHtmlResults(html: string): ParsedSearchPage {
   const $ = cheerio.load(html);
   const out: SearchResult[] = [];
 
@@ -71,10 +87,15 @@ function parseHtmlResults(html: string): SearchResult[] {
     });
   });
 
-  return out;
+  // Контейнер выдачи или явное «ничего не найдено» означают, что страница —
+  // настоящая выдача, а не заглушка и не изменившаяся вёрстка.
+  const recognized =
+    out.length > 0 || $('#links').length > 0 || $('.no-results').length > 0 || $('.results').length > 0;
+
+  return { results: out, recognized };
 }
 
-function parseLiteResults(html: string): SearchResult[] {
+export function parseLiteResults(html: string): ParsedSearchPage {
   const $ = cheerio.load(html);
   const out: SearchResult[] = [];
 
@@ -88,7 +109,7 @@ function parseLiteResults(html: string): SearchResult[] {
     out.push({ title: $(el).text().trim(), url, snippet: truncate(snippet, 400) });
   });
 
-  return out;
+  return { results: out, recognized: out.length > 0 || $('form[action*="lite"]').length > 0 };
 }
 
 /** DuckDuckGo прячет целевой адрес в параметре uddg редиректа /l/. */

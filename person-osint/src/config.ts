@@ -30,6 +30,8 @@ export interface RuntimeConfig {
   respectRobots: boolean;
   /** Порог, ниже которого находка считается непроверенной. */
   confidenceThreshold: number;
+  /** Не ходить в сеть, а только записать, какие запросы были бы отправлены. */
+  dryRun: boolean;
   logLevel: 'silent' | 'error' | 'warn' | 'info' | 'debug';
 }
 
@@ -45,6 +47,7 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
   cacheTtlMs: 24 * 60 * 60 * 1000,
   respectRobots: true,
   confidenceThreshold: 0.45,
+  dryRun: false,
   logLevel: 'info',
 };
 
@@ -176,9 +179,9 @@ export const PLATFORMS: PlatformSpec[] = [
   },
   {
     platform: 'hh',
-    label: 'hh.ru',
-    domains: ['hh.ru'],
-    profilePatterns: [/hh\.ru\/resume\//i],
+    label: 'hh.ru / hh.kz',
+    domains: ['hh.ru', 'hh.kz', 'hh.uz'],
+    profilePatterns: [/hh\.(ru|kz|uz)\/resume\//i],
     prior: 0.7,
   },
   {

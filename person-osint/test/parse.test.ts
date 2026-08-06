@@ -99,6 +99,28 @@ describe('searchDuckDuckGo', () => {
     assert.equal(results[0]?.url, 'https://habr.com/ru/users/ipetrov/');
   });
 
+  it('честно пустая выдача не порождает второй запрос', async () => {
+    // Для узких site:-дорков пустой результат — норма. Дублировать такой запрос
+    // на lite значит удвоить трафик и упереться в ограничение частоты.
+    const http = fakeHttp([
+      { match: 'html.duckduckgo.com', body: '<html><body><div id="links" class="results"></div></body></html>' },
+      { match: 'lite.duckduckgo.com', body: DDG_LITE },
+    ]);
+    const results = await searchDuckDuckGo(http, 'q', 10, silentLogger);
+
+    assert.deepEqual(results, []);
+    assert.equal(http.calls.length, 1, `ожидался один запрос, было: ${http.calls.join(', ')}`);
+  });
+
+  it('нераспознанная вёрстка всё же уводит на lite', async () => {
+    const http = fakeHttp([
+      { match: 'html.duckduckgo.com', body: '<html><body>капча</body></html>' },
+      { match: 'lite.duckduckgo.com', body: DDG_LITE },
+    ]);
+    await searchDuckDuckGo(http, 'q', 10, silentLogger);
+    assert.equal(http.calls.length, 2);
+  });
+
   it('возвращает пусто, если оба эндпоинта недоступны', async () => {
     const http = fakeHttp([{ match: 'duckduckgo.com', body: '', status: 503 }]);
     assert.deepEqual(await searchDuckDuckGo(http, 'q', 10, silentLogger), []);
