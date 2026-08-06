@@ -1,5 +1,6 @@
 import { NON_PROFILE_PATH_SEGMENTS, PLATFORMS, type PlatformSpec } from '../config.ts';
 import type { NameVariants, Target } from '../types.ts';
+import { canonicalUrl } from './html.ts';
 import { containsHint, nameMatchScore, normalize, tokenMatches } from './text.ts';
 
 export interface ScoreInput {
@@ -29,10 +30,11 @@ export function scoreHit(input: ScoreInput, target: Target, names: NameVariants)
   const haystack = [input.title, input.snippet, input.body].filter(Boolean).join(' \n ');
   const signals: string[] = [];
 
-  const nameScore = Math.max(
-    nameMatchScore(haystack, names),
-    nameMatchScore(decodeUrlWords(input.url), names) * 0.9,
-  );
+  const textScore = nameMatchScore(haystack, names);
+  // Имя в адресе — настоящее свидетельство, но слабее имени в видимом тексте:
+  // ник наследуется, продаётся и достаётся сообществам, названным в честь человека.
+  const urlScore = nameMatchScore(decodeUrlWords(input.url), names);
+  const nameScore = Math.max(textScore, urlScore * 0.7);
 
   if (nameScore === 0) {
     return { confidence: 0, signals: ['имя не найдено ни в тексте, ни в URL'] };
@@ -67,6 +69,14 @@ export function scoreHit(input: ScoreInput, target: Target, names: NameVariants)
 
   if (input.sourcePrior !== undefined) {
     confidence += (input.sourcePrior - 0.5) * 0.2;
+  }
+
+  // Совпал только адрес, а на самой странице человека не видно. Уточнители в
+  // тексте при этом могут относиться к кому-то другому, поэтому поднимать
+  // такую находку выше «вероятно» нельзя, сколько бы совпадений ни набралось.
+  if (textScore === 0 && urlScore > 0) {
+    confidence = Math.min(confidence, 0.6);
+    signals.push('имя есть только в адресе страницы, в тексте не подтверждено');
   }
 
   // Однофамильцы без единого уточнителя — самый частый источник ложных
@@ -111,6 +121,26 @@ export function looksLikeProfileUrl(url: string): boolean {
     return false;
   }
   return true;
+}
+
+/**
+ * Адрес, по которому профиль опознаётся как один и тот же. Поисковики приводят
+ * одну и ту же страницу с разными параметрами (`?from=search`, `?tab=…`), и без
+ * их отсечения профиль двоится в отчёте.
+ *
+ * Параметры снимаются только если без них адрес всё ещё распознаётся как
+ * профиль: у Google Scholar идентификатор живёт именно в query-строке.
+ */
+export function profileIdentityUrl(url: string): string {
+  const canonical = canonicalUrl(url);
+  try {
+    const parsed = new URL(canonical);
+    if (!parsed.search) return canonical;
+    const withoutQuery = `${parsed.origin}${parsed.pathname}`;
+    return looksLikeProfileUrl(withoutQuery) ? withoutQuery : canonical;
+  } catch {
+    return canonical;
+  }
 }
 
 export function extractHandle(url: string): string | undefined {

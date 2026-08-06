@@ -69,6 +69,22 @@ describe('translitVariants', () => {
   it('учитывает kh/h для х', () => {
     assert.ok(translitVariants('Михаил').includes('mihail'));
   });
+
+  it('комбинирует правила: кс→x и ей→ei дают ходовые написания', () => {
+    const variants = translitVariants('Алексей');
+    for (const expected of ['aleksey', 'alexey', 'aleksei', 'alexei']) {
+      assert.ok(variants.includes(expected), `нет варианта ${expected}: ${variants.join(', ')}`);
+    }
+  });
+
+  it('находит имя в нике профиля, записанном латиницей', () => {
+    const names = buildNameVariants('Алексей Маникин');
+    assert.equal(nameMatchScore('alexei manikin', names), 1);
+  });
+
+  it('число вариантов ограничено, чтобы не плодить запросы', () => {
+    assert.ok(translitVariants('Евгений').length <= 8);
+  });
 });
 
 describe('buildNameVariants', () => {

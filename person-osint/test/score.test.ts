@@ -5,6 +5,7 @@ import {
   estimateDistinctPeople,
   extractHandle,
   looksLikeProfileUrl,
+  profileIdentityUrl,
   scoreHit,
 } from '../src/core/score.ts';
 import { buildNameVariants } from '../src/core/text.ts';
@@ -56,6 +57,28 @@ describe('scoreHit', () => {
     assert.ok(result.confidence > 0.5);
   });
 
+  it('совпадение только по адресу не даёт высокой уверенности', () => {
+    // Страница явно о другом человеке, но ник в адресе совпал с искомым:
+    // уточнители в тексте относятся к кому-то ещё и не должны решать исход.
+    const result = scoreHit(
+      { url: 'https://vk.ru/ivan-petrov', title: 'Сергей Иванов', snippet: 'Москва · Яндекс' },
+      target,
+      names,
+    );
+    assert.ok(result.confidence <= 0.6, `ожидалось ≤0.6, получено ${result.confidence}`);
+    assert.ok(result.signals.some((s) => s.includes('только в адресе')));
+  });
+
+  it('подтверждение имени в тексте страницы снимает ограничение по адресу', () => {
+    const result = scoreHit(
+      { url: 'https://vk.ru/ivan-petrov', title: 'Иван Петров', snippet: 'Москва · Яндекс' },
+      target,
+      names,
+    );
+    assert.ok(result.confidence > 0.75);
+    assert.ok(!result.signals.some((s) => s.includes('только в адресе')));
+  });
+
   it('оценка не выходит за границы 0..1', () => {
     const result = scoreHit(
       {
@@ -88,6 +111,15 @@ describe('looksLikeProfileUrl', () => {
 
   it('отсеивает вложенные страницы вместо профиля', () => {
     assert.ok(!looksLikeProfileUrl('https://github.com/ivanpetrov/some-repo'));
+    assert.ok(!looksLikeProfileUrl('https://vk.ru/alexei_manikin/photos'));
+  });
+
+  it('query-строка и якорь не мешают распознать профиль', () => {
+    // Поисковая выдача почти всегда приносит ссылки с параметрами.
+    assert.ok(looksLikeProfileUrl('https://vk.ru/alexei_manikin?from=search'));
+    assert.ok(looksLikeProfileUrl('https://vk.com/alexei_manikin#wall'));
+    assert.ok(looksLikeProfileUrl('https://github.com/ipetrov?tab=repositories'));
+    assert.ok(looksLikeProfileUrl('https://m.vk.com/alexei_manikin'));
   });
 
   it('чужие домены профилями не считаются', () => {
@@ -105,6 +137,29 @@ describe('detectPlatform / extractHandle', () => {
   it('достаёт ник из URL', () => {
     assert.equal(extractHandle('https://github.com/ivanpetrov'), 'ivanpetrov');
     assert.equal(extractHandle('https://www.linkedin.com/in/ivan-petrov/'), 'ivan-petrov');
+  });
+});
+
+describe('profileIdentityUrl', () => {
+  it('снимает параметры поиска с адреса профиля', () => {
+    assert.equal(
+      profileIdentityUrl('https://vk.ru/alexei_manikin?from=search'),
+      'https://vk.ru/alexei_manikin',
+    );
+    assert.equal(
+      profileIdentityUrl('https://github.com/ipetrov?tab=repositories'),
+      'https://github.com/ipetrov',
+    );
+  });
+
+  it('сохраняет query, если в нём и живёт идентификатор', () => {
+    // У Google Scholar профиль опознаётся именно параметром user=.
+    const url = 'https://scholar.google.com/citations?user=AbC123';
+    assert.ok(profileIdentityUrl(url).includes('user=AbC123'));
+  });
+
+  it('не трогает адреса без параметров', () => {
+    assert.equal(profileIdentityUrl('https://vk.ru/alexei_manikin'), 'https://vk.ru/alexei_manikin');
   });
 });
 

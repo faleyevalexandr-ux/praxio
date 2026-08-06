@@ -1,5 +1,6 @@
 import type { DocumentHit, Fact, ProfileHit } from '../types.ts';
 import { canonicalUrl } from './html.ts';
+import { profileIdentityUrl } from './score.ts';
 import { normalize } from './text.ts';
 
 /**
@@ -11,10 +12,11 @@ export function mergeProfiles(hits: ProfileHit[]): ProfileHit[] {
   const byKey = new Map<string, ProfileHit>();
 
   for (const hit of hits) {
-    const key = `${hit.platform}::${canonicalUrl(hit.url).toLowerCase()}`;
+    const identity = profileIdentityUrl(hit.url);
+    const key = `${hit.platform}::${identity.toLowerCase()}`;
     const existing = byKey.get(key);
     if (!existing) {
-      byKey.set(key, { ...hit, url: canonicalUrl(hit.url) });
+      byKey.set(key, { ...hit, url: identity });
       continue;
     }
     byKey.set(key, {

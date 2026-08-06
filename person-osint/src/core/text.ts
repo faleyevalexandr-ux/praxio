@@ -38,28 +38,45 @@ export function translit(input: string): string {
 }
 
 /**
+ * Правила разнописания латиницей. Каждое применяется ко всем уже полученным
+ * вариантам, поэтому они комбинируются: Алексей → aleksey → alexey → alexei.
+ * Без комбинирования самые ходовые написания («Alexei», «Alexey») терялись бы.
+ */
+const TRANSLIT_RULES: Array<[RegExp, string]> = [
+  [/(iy|yy)$/, 'i'],      // Дмитрий → dmitri
+  [/(iy|yy)$/, 'y'],      // Дмитрий → dmitry
+  [/ey$/, 'ei'],          // Алексей → aleksei
+  [/ks/g, 'x'],           // Алексей → alexey, Максим → maxim
+  [/kh/g, 'h'],           // Михаил → mihail
+  [/ya/g, 'ia'],          // Наталья → natalia
+  [/yu/g, 'iu'],          // Юлия → iulia
+  [/ts/g, 'c'],           // Цветков → cvetkov
+  [/^e/, 'ye'],           // Евгений → yevgeniy
+];
+
+/** Больше вариантов на токен не нужно: дальше растёт только шум и число запросов. */
+const MAX_VARIANTS = 8;
+
+/**
  * Альтернативные написания одного и того же слова латиницей. В вебе одно имя
  * встречается сразу в нескольких вариантах, и без них половина совпадений теряется.
  */
 export function translitVariants(input: string): string[] {
-  const base = translit(input);
-  const variants = new Set<string>([base]);
+  const variants = new Set<string>([translit(input)]);
 
-  // -ий / -ый на конце: Дмитрий → dmitriy / dmitri / dmitry
-  if (/(ий|ый)$/.test(input.toLowerCase())) {
-    const stem = base.replace(/(iy|yy)$/, '');
-    variants.add(`${stem}i`);
-    variants.add(`${stem}y`);
+  // Замыкание по правилам: пока набор растёт и не упёрся в предел.
+  for (let pass = 0; pass < TRANSLIT_RULES.length; pass++) {
+    const before = variants.size;
+    for (const variant of [...variants]) {
+      for (const [pattern, replacement] of TRANSLIT_RULES) {
+        if (variants.size >= MAX_VARIANTS) break;
+        // String.replace сам сбрасывает lastIndex у /g-регулярок, в отличие от test().
+        const next = variant.replace(pattern, replacement);
+        if (next !== variant) variants.add(next);
+      }
+    }
+    if (variants.size === before || variants.size >= MAX_VARIANTS) break;
   }
-  // х → h вместо kh (Михаил → mihail)
-  if (base.includes('kh')) variants.add(base.replace(/kh/g, 'h'));
-  // я/ю в начале и середине: Наталья → natalia
-  if (base.includes('ya')) variants.add(base.replace(/ya/g, 'ia'));
-  if (base.includes('yu')) variants.add(base.replace(/yu/g, 'iu'));
-  // е после согласной часто пишут как ye: Евгений → yevgeniy
-  if (/^e/.test(base)) variants.add(`y${base}`);
-  // ц → c вместо ts
-  if (base.includes('ts')) variants.add(base.replace(/ts/g, 'c'));
 
   return [...variants].filter(Boolean);
 }

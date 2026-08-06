@@ -43,6 +43,17 @@ describe('mergeProfiles', () => {
     assert.equal(merged[0]!.confidence, 0.6);
   });
 
+  it('один профиль с параметрами поиска и без них считается одним', () => {
+    // Поисковик отдаёт одну и ту же страницу с ?from=search и без него.
+    const merged = mergeProfiles([
+      profile({ url: 'https://vk.ru/alexei_manikin?from=search', platform: 'vk', sourceId: 'social' }),
+      profile({ url: 'https://vk.ru/alexei_manikin', platform: 'vk', sourceId: 'websearch' }),
+    ]);
+    assert.equal(merged.length, 1);
+    assert.equal(merged[0]!.url, 'https://vk.ru/alexei_manikin');
+    assert.equal(merged[0]!.evidence.length, 2);
+  });
+
   it('разные площадки не сливаются', () => {
     const merged = mergeProfiles([
       profile({ url: 'https://github.com/ipetrov', sourceId: 'a' }),

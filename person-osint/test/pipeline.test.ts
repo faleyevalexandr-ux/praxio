@@ -142,6 +142,30 @@ describe('investigate (сквозной прогон без сети)', () => {
     assert.ok(github.signals.some((s) => s.includes('заявлен как свой')));
   });
 
+  it('площадка профиля берётся из ссылки, а не из site:-запроса', async () => {
+    // Выдача по site: приносит ссылку с соседнего домена — она не должна
+    // получить ярлык той площадки, по которой шёл запрос.
+    const vkTarget = { fullName: 'Алексей Маникин', city: 'Санкт-Петербург', keywords: [] };
+    const vkResults = `<html><body><div class="result">
+      <h2><a class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fvk.ru%2Falexei_manikin%3Ffrom%3Dsearch">Алексей Маникин | ВКонтакте</a></h2>
+      <a class="result__snippet">Санкт-Петербург</a>
+    </div></body></html>`;
+
+    const report = await investigate(vkTarget, {
+      http: fakeHttp([{ match: 'duckduckgo.com', body: vkResults }]),
+      only: ['social'],
+      config: { logLevel: 'silent', enrichLimit: 0 },
+    });
+
+    assert.ok(report.profiles.length > 0);
+    for (const profile of report.profiles) {
+      assert.equal(profile.platform, 'vk', `неверная площадка для ${profile.url}`);
+    }
+    // Один и тот же профиль не должен продублироваться на каждый site:-запрос.
+    assert.equal(report.profiles.length, 1);
+    assert.equal(report.profiles[0]!.url, 'https://vk.ru/alexei_manikin');
+  });
+
   it('недоступный источник не роняет прогон', async () => {
     const report = await investigate(target, {
       http: fakeHttp([{ match: 'duckduckgo.com', body: '', status: 503 }]),

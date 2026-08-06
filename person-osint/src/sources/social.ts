@@ -1,7 +1,7 @@
 import { PLATFORMS } from '../config.ts';
 import { buildQuery, searchDuckDuckGo } from '../core/ddg.ts';
 import { canonicalUrl } from '../core/html.ts';
-import { extractHandle, looksLikeProfileUrl, scoreHit } from '../core/score.ts';
+import { detectPlatform, extractHandle, looksLikeProfileUrl, scoreHit } from '../core/score.ts';
 import type { Source, SourceYield } from '../types.ts';
 import { emptyYield, evidence } from './_shared.ts';
 
@@ -50,6 +50,12 @@ export const socialProfilesSource: Source = {
             if (!looksLikeProfileUrl(url)) continue;
             seen.add(url);
 
+            // Ярлык берётся из самой ссылки, а не из платформы запроса: выдача
+            // по site: регулярно приносит результаты с соседних доменов, и по
+            // циклу запросов профиль получил бы чужую площадку.
+            const actual = detectPlatform(url);
+            if (!actual) continue;
+
             const { confidence, signals } = scoreHit(
               { url, title: hit.title, snippet: hit.snippet, sourcePrior: 0.55 },
               target,
@@ -58,13 +64,13 @@ export const socialProfilesSource: Source = {
             if (confidence === 0) continue;
 
             result.profiles.push({
-              platform: platform.platform,
+              platform: actual.platform,
               url,
               ...(extractHandle(url) ? { handle: extractHandle(url) } : {}),
               title: hit.title,
               snippet: hit.snippet,
               confidence,
-              signals: [...signals, `найден точечным запросом по ${platform.label}`],
+              signals: [...signals, `найден точечным запросом по ${actual.label}`],
               evidence: [evidence(ID, url, startedAt, hit.title, hit.snippet)],
             });
           }
