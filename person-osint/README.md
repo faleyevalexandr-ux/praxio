@@ -40,7 +40,8 @@ person-osint "Иван Петров" --city Москва --company "Яндекс
 
 ## Установка
 
-Нужен Node.js 20.11 или новее.
+Нужен Node.js 22.6 или новее — из-за исполнения TypeScript без сборки
+(`--experimental-strip-types`). Собранный `dist/` работает и на Node 20.
 
 ```bash
 cd person-osint
