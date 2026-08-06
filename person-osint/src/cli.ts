@@ -21,6 +21,8 @@ ${TOOL_NAME} v${TOOL_VERSION} — сбор публичных сведений �
   --company <название>    Компания, ВУЗ или организация
   --country <ISO2>        Код страны, влияет на выбор языка источников (RU, US…)
   --keyword <слово>       Дополнительный уточнитель, можно повторять
+  --profile <url>         Уже известный адрес профиля, можно повторять. От него
+                          раскручиваются связанные аккаунты и одинаковые ники
   --purpose <текст>       Цель сбора, попадает в отчёт как отметка об основании
 
 ОПЦИИ ВЫВОДА
@@ -64,6 +66,7 @@ async function main(): Promise<number> {
       company: { type: 'string' },
       country: { type: 'string' },
       keyword: { type: 'string', multiple: true },
+      profile: { type: 'string', multiple: true },
       purpose: { type: 'string' },
       format: { type: 'string', default: 'both' },
       out: { type: 'string', default: 'reports' },
@@ -140,6 +143,7 @@ async function main(): Promise<number> {
     ...(values.country ? { country: values.country } : {}),
     ...(values.purpose ? { purpose: values.purpose } : {}),
     keywords: values.keyword ?? [],
+    ...(values.profile?.length ? { knownProfiles: values.profile } : {}),
   };
 
   const report = await investigate(target, {

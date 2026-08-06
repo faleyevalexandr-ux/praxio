@@ -167,7 +167,7 @@ export function canonicalUrl(input: string): string {
     const url = new URL(input);
     url.hash = '';
     for (const key of [...url.searchParams.keys()]) {
-      if (/^(utm_|fbclid|gclid|yclid|ref|ref_src|_ga|mc_cid|mc_eid|si)/i.test(key)) {
+      if (/^(utm_|fbclid|gclid|yclid|ref|ref_src|_ga|mc_cid|mc_eid|si|igsh|igshid|share_id)/i.test(key)) {
         url.searchParams.delete(key);
       }
     }

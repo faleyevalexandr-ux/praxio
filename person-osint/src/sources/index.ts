@@ -6,12 +6,14 @@ import { githubSource } from './github.ts';
 import { newsSource } from './news.ts';
 import { openAlexSource } from './openalex.ts';
 import { orcidSource } from './orcid.ts';
+import { seedProfilesSource } from './seeds.ts';
 import { socialProfilesSource } from './social.ts';
 import { webSearchSource } from './websearch.ts';
 import { wikidataSource } from './wikidata.ts';
 
 /** Порядок влияет только на вывод `person-osint sources`; запуск параллельный. */
 export const ALL_SOURCES: Source[] = [
+  seedProfilesSource,
   webSearchSource,
   socialProfilesSource,
   wikidataSource,
