@@ -196,13 +196,18 @@ async function main(): Promise<number> {
 
 function printPlan(requests: string[]): void {
   const groups = groupByHost(requests);
-  process.stdout.write(`\nСухой прогон: ${requests.length} запросов к ${groups.length} хостам, ничего не отправлено.\n`);
+  process.stdout.write(
+    `\nЭто план, а не результат: ${requests.length} запросов к ${groups.length} хостам, ` +
+      'ни один не отправлен.\n' +
+      'Поиск не выполнялся — запустите ту же команду без --dry-run.\n',
+  );
 
-  for (const { host, urls } of groups) {
-    process.stdout.write(`\n${host} (${urls.length})\n`);
-    for (const url of urls) {
-      const query = describeQuery(url);
-      process.stdout.write(query ? `  ${query}\n` : `  ${url}\n`);
+  for (const { host, total, entries } of groups) {
+    process.stdout.write(`\n${host} (${total})\n`);
+    for (const { label, count } of entries) {
+      // Одна и та же фраза уходит по нескольку раз с разными параметрами
+      // (язык, локаль, эндпоинт) — показываем это явно, а не строкой-дублем.
+      process.stdout.write(count > 1 ? `  ${label}  ×${count}\n` : `  ${label}\n`);
     }
   }
 

@@ -193,7 +193,7 @@ export const mySource: Source = {
 ## Тесты
 
 ```bash
-npm test        # 123 теста, сеть не используется
+npm test        # 131 тест, сеть не используется
 npm run typecheck
 ```
 

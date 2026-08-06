@@ -38,9 +38,29 @@ export class DryRunError extends Error {
   }
 }
 
-/** Группирует записанные запросы по хостам для читаемого вывода. */
-export function groupByHost(requests: string[]): Array<{ host: string; urls: string[] }> {
-  const byHost = new Map<string, string[]>();
+export interface PlanEntry {
+  /** Человекочитаемая подпись: поисковая фраза либо сам адрес. */
+  label: string;
+  /** Сколько запросов сворачивается в эту подпись. */
+  count: number;
+}
+
+export interface PlanGroup {
+  host: string;
+  /** Всего запросов к хосту. */
+  total: number;
+  entries: PlanEntry[];
+}
+
+/**
+ * Группирует запросы по хостам и сворачивает одинаковые подписи.
+ *
+ * Один и тот же поисковый запрос уходит по нескольку раз с разными
+ * параметрами — Wikidata опрашивается на двух языках, Google News по двум
+ * локалям. Без свёртки строки выглядят дублями, хотя запросы разные.
+ */
+export function groupByHost(requests: string[]): PlanGroup[] {
+  const byHost = new Map<string, Set<string>>();
 
   for (const url of requests) {
     let host: string;
@@ -49,21 +69,39 @@ export function groupByHost(requests: string[]): Array<{ host: string; urls: str
     } catch {
       host = '(некорректный URL)';
     }
-    const list = byHost.get(host) ?? [];
-    if (!list.includes(url)) list.push(url);
-    byHost.set(host, list);
+    const set = byHost.get(host) ?? new Set<string>();
+    set.add(url);
+    byHost.set(host, set);
   }
 
   return [...byHost.entries()]
-    .map(([host, urls]) => ({ host, urls }))
-    .sort((a, b) => b.urls.length - a.urls.length || a.host.localeCompare(b.host));
+    .map(([host, urls]) => {
+      const byLabel = new Map<string, number>();
+      for (const url of urls) {
+        const label = describeQuery(url) ?? url;
+        byLabel.set(label, (byLabel.get(label) ?? 0) + 1);
+      }
+      return {
+        host,
+        total: urls.size,
+        entries: [...byLabel.entries()].map(([label, count]) => ({ label, count })),
+      };
+    })
+    .sort((a, b) => b.total - a.total || a.host.localeCompare(b.host));
 }
+
+/** Имена параметров, в которых у используемых API лежит поисковая фраза. */
+const QUERY_PARAMS = ['q', 'query', 'search', 'query.author', 'inname', 'ids'];
 
 /** Достаёт поисковый запрос из URL, чтобы показать его в человекочитаемом виде. */
 export function describeQuery(url: string): string | undefined {
   try {
     const parsed = new URL(url);
-    return parsed.searchParams.get('q') ?? parsed.searchParams.get('query') ?? parsed.searchParams.get('search') ?? undefined;
+    for (const name of QUERY_PARAMS) {
+      const value = parsed.searchParams.get(name);
+      if (value) return value;
+    }
+    return undefined;
   } catch {
     return undefined;
   }
