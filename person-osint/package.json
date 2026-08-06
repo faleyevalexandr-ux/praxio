@@ -1,0 +1,40 @@
+{
+  "name": "person-osint",
+  "version": "0.1.0",
+  "description": "OSINT-агрегатор публичных сведений о человеке по ФИО, городу и месту работы. Только открытые источники, без API-ключей.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "person-osint": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node --experimental-strip-types src/cli.ts",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "sources": "node --experimental-strip-types src/cli.ts sources"
+  },
+  "dependencies": {
+    "cheerio": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}
