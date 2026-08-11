@@ -1,0 +1,977 @@
+<title>Арсенал — КП для «Оружейка+» | Кастомная система для ПЦХО</title>
+
+<style>
+  /* ============ TOKENS: light (bare :root = complete palette) ============ */
+  :root {
+    --ground:        #EBEDF0;
+    --surface:       #FFFFFF;
+    --surface-sunk:  #E3E6EA;
+    --ink:           #12161C;
+    --ink-soft:      #3D4753;
+    --ink-mute:      #5E6E80;
+    --rule:          #CBD2DA;
+    --rule-soft:     #DDE2E8;
+    --brass:         #8C6420;
+    --brass-bright:  #B5842F;
+    --brass-wash:    #F3EADA;
+    --ok:            #2F7350;
+    --ok-wash:       #E2EFE7;
+    --warn:          #96691A;
+    --warn-wash:     #F5EBD6;
+    --crit:          #9B3A30;
+    --crit-wash:     #F6E4E1;
+    --shadow:        0 1px 2px rgba(18,22,28,.06), 0 8px 24px -12px rgba(18,22,28,.18);
+
+    --serif: Georgia, "Times New Roman", "Droid Serif", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  }
+
+  /* ============ TOKENS: dark via OS preference (explicit light wins) ============ */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:       #0F1319;
+      --surface:      #171C24;
+      --surface-sunk: #12171E;
+      --ink:          #E2E7EE;
+      --ink-soft:     #B4BECB;
+      --ink-mute:     #8A9AAB;
+      --rule:         #2C343F;
+      --rule-soft:    #222933;
+      --brass:        #D8A44B;
+      --brass-bright: #E8BC6C;
+      --brass-wash:   #241D0F;
+      --ok:           #62B285;
+      --ok-wash:      #14231B;
+      --warn:         #D6A748;
+      --warn-wash:    #241E10;
+      --crit:         #D97F72;
+      --crit-wash:    #251614;
+      --shadow:       0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+    }
+  }
+
+  /* ============ TOKENS: dark via explicit toggle ============ */
+  :root[data-theme="dark"] {
+    --ground:       #0F1319;
+    --surface:      #171C24;
+    --surface-sunk: #12171E;
+    --ink:          #E2E7EE;
+    --ink-soft:     #B4BECB;
+    --ink-mute:     #8A9AAB;
+    --rule:         #2C343F;
+    --rule-soft:    #222933;
+    --brass:        #D8A44B;
+    --brass-bright: #E8BC6C;
+    --brass-wash:   #241D0F;
+    --ok:           #62B285;
+    --ok-wash:      #14231B;
+    --warn:         #D6A748;
+    --warn-wash:    #241E10;
+    --crit:         #D97F72;
+    --crit-wash:    #251614;
+    --shadow:       0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+
+  /* ============ BASE ============ */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16.5px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+
+  /* prose column — sits inside the wide wrap, breakouts escape it */
+  .prose { max-width: 68ch; }
+
+  a { color: var(--brass); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible,
+  .toc a:focus-visible { outline: 2px solid var(--brass-bright); outline-offset: 3px; border-radius: 2px; }
+
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; text-wrap: balance; line-height: 1.2; margin: 0; }
+
+  p { margin: 0; }
+
+  strong { font-weight: 650; color: var(--ink); }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin: 0;
+  }
+
+  /* ============ MASTHEAD ============ */
+  .masthead {
+    border-bottom: 1px solid var(--rule);
+    background: var(--surface);
+  }
+  .masthead-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 56px 24px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  .masthead h1 {
+    font-size: clamp(34px, 5.4vw, 54px);
+    letter-spacing: -.015em;
+  }
+  .masthead h1 .accent { color: var(--brass); }
+  .lede {
+    font-size: clamp(17px, 2vw, 19.5px);
+    color: var(--ink-soft);
+    max-width: 60ch;
+  }
+  .brassrule { height: 2px; width: 64px; background: var(--brass-bright); border: 0; margin: 0; }
+
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+  .meta div { background: var(--surface); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .meta dt, .meta .k {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-mute);
+  }
+  .meta .v { font-size: 14.5px; color: var(--ink); font-weight: 600; }
+
+  /* ============ TOC ============ */
+  .toc {
+    margin-top: 48px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    padding: 22px 26px;
+  }
+  .toc ol {
+    margin: 14px 0 0; padding: 0; list-style: none;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 2px 28px;
+    counter-reset: toc;
+  }
+  .toc li { counter-increment: toc; }
+  .toc a {
+    display: flex; gap: 10px; padding: 5px 0; color: var(--ink-soft);
+    text-decoration: none; font-size: 14.5px; border-bottom: 1px solid transparent;
+  }
+  .toc a::before {
+    content: counter(toc, decimal-leading-zero);
+    font-family: var(--mono); font-size: 11.5px; color: var(--brass);
+    padding-top: 3px; flex: none;
+  }
+  .toc a:hover { color: var(--brass); }
+
+  /* ============ SECTIONS ============ */
+  section { margin-top: 72px; scroll-margin-top: 24px; }
+
+  .sec-head {
+    display: flex; flex-direction: column; gap: 10px;
+    padding-top: 20px; border-top: 2px solid var(--brass-bright);
+    margin-bottom: 26px;
+  }
+  .sec-head h2 { font-size: clamp(24px, 3.2vw, 32px); letter-spacing: -.01em; }
+  .sec-head .num { font-family: var(--mono); font-size: 11.5px; letter-spacing: .14em; color: var(--brass); }
+
+  .stack { display: flex; flex-direction: column; gap: 18px; }
+  .stack-lg { display: flex; flex-direction: column; gap: 28px; }
+
+  h3.sub {
+    font-size: 19px; margin-top: 6px;
+  }
+
+  /* ============ CARDS ============ */
+  .cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--rule);
+    padding: 20px 22px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .card h3 { font-size: 18px; }
+  .card p { font-size: 14.8px; color: var(--ink-soft); }
+
+  /* numbered feature cards — the six differentiators */
+  .feat {
+    background: var(--surface); border: 1px solid var(--rule);
+    border-left: 3px solid var(--brass-bright);
+    padding: 22px 24px; display: flex; flex-direction: column; gap: 12px;
+    box-shadow: var(--shadow);
+  }
+  .feat-top { display: flex; align-items: baseline; gap: 14px; }
+  .feat-n {
+    font-family: var(--mono); font-size: 12px; color: var(--brass);
+    letter-spacing: .1em; flex: none; padding-top: 2px;
+  }
+  .feat h3 { font-size: 20px; }
+  .feat p { font-size: 15.2px; color: var(--ink-soft); max-width: 66ch; }
+  .feat .why {
+    border-top: 1px solid var(--rule-soft); padding-top: 12px;
+    font-size: 14.6px; color: var(--ink-soft);
+  }
+  .feat .why b { color: var(--brass); font-weight: 650; }
+
+  /* ============ STAT ROW ============ */
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+  }
+  .stat { background: var(--surface); padding: 20px 18px; display: flex; flex-direction: column; gap: 6px; }
+  .stat .n {
+    font-family: var(--serif); font-size: clamp(26px, 3.6vw, 34px); font-weight: 600;
+    color: var(--brass); font-variant-numeric: tabular-nums; line-height: 1.05;
+  }
+  .stat .l { font-size: 13.4px; color: var(--ink-mute); }
+
+  /* ============ TABLES ============ */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14.6px; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  thead th {
+    font-family: var(--mono); font-size: 10.8px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-mute); font-weight: 500; background: var(--surface-sunk);
+    border-bottom: 1px solid var(--rule); position: sticky; top: 0;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num, th.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  td.mid, th.mid { text-align: center; }
+  .yes { color: var(--ok); font-weight: 700; }
+  .no  { color: var(--ink-mute); }
+  tr.total td { background: var(--brass-wash); font-weight: 650; border-top: 1px solid var(--brass-bright); }
+  tr.total td.num { color: var(--brass); }
+
+  /* ============ PILLS ============ */
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .05em;
+    padding: 3px 9px; border-radius: 2px; white-space: nowrap;
+  }
+  .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+  .pill.ok   { color: var(--ok);   background: var(--ok-wash);   border: 1px solid var(--ok); }
+  .pill.warn { color: var(--warn); background: var(--warn-wash); border: 1px solid var(--warn); }
+  .pill.crit { color: var(--crit); background: var(--crit-wash); border: 1px solid var(--crit); }
+
+  /* ============ PAIN LIST ============ */
+  .pains { display: flex; flex-direction: column; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .pain {
+    background: var(--surface); padding: 18px 22px;
+    display: grid; grid-template-columns: 40px 1fr; gap: 4px 16px; align-items: baseline;
+  }
+  .pain .n { font-family: var(--mono); font-size: 12px; color: var(--brass); }
+  .pain h3 { font-size: 17px; grid-column: 2; }
+  .pain p { grid-column: 2; font-size: 14.6px; color: var(--ink-soft); max-width: 68ch; }
+
+  /* ============ PRICING ============ */
+  .prices { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+  .price {
+    background: var(--surface); border: 1px solid var(--rule);
+    padding: 24px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .price.pick { border: 2px solid var(--brass-bright); box-shadow: var(--shadow); }
+  .price .tag {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--brass);
+  }
+  .price h3 { font-size: 22px; }
+  .price .amount {
+    font-family: var(--serif); font-size: 30px; font-weight: 600; color: var(--ink);
+    font-variant-numeric: tabular-nums; line-height: 1.1;
+  }
+  .price .term { font-family: var(--mono); font-size: 12.5px; color: var(--ink-mute); }
+  .price p { font-size: 14.6px; color: var(--ink-soft); }
+  .price ul { margin: 0; padding-left: 18px; font-size: 14.4px; color: var(--ink-soft); }
+  .price ul li { margin-bottom: 4px; }
+
+  .callout {
+    background: var(--brass-wash); border: 1px solid var(--brass-bright);
+    padding: 24px 26px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .callout h3 { font-size: 21px; color: var(--ink); }
+  .callout p { font-size: 15.2px; color: var(--ink-soft); max-width: 66ch; }
+  .callout .amount { font-family: var(--serif); font-size: 28px; font-weight: 600; color: var(--brass); }
+
+  /* ============ TIMELINE ============ */
+  .steps { display: flex; flex-direction: column; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .step {
+    background: var(--surface); padding: 15px 20px;
+    display: grid; grid-template-columns: 34px 1fr auto; gap: 16px; align-items: baseline;
+  }
+  .step .n { font-family: var(--mono); font-size: 12px; color: var(--brass); }
+  .step .t { font-size: 15px; }
+  .step .d { font-family: var(--mono); font-size: 12.5px; color: var(--ink-mute); white-space: nowrap; }
+  .step.core { background: var(--brass-wash); }
+
+  /* ============ CTA ============ */
+  .cta {
+    margin-top: 72px; border: 2px solid var(--brass-bright); background: var(--surface);
+    padding: 34px; display: flex; flex-direction: column; gap: 20px;
+  }
+  .cta h2 { font-size: clamp(24px, 3.2vw, 30px); }
+  .cta ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 15.4px; color: var(--ink-soft); }
+  .cta ol li strong { color: var(--ink); }
+
+  .note {
+    margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--rule);
+    font-size: 13.4px; color: var(--ink-mute); max-width: 72ch;
+  }
+
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    .masthead-inner { padding: 40px 20px 32px; }
+    .wrap { padding: 0 20px 72px; }
+    .step { grid-template-columns: 28px 1fr; }
+    .step .d { grid-column: 2; }
+    .cta { padding: 26px 22px; }
+  }
+</style>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <p class="eyebrow">Коммерческое предложение · 11 августа 2026</p>
+    <h1><span class="accent">Арсенал</span> — система управления пунктом централизованного хранения оружия</h1>
+    <hr class="brassrule">
+    <p class="lede">
+      «Оружейка+» работает на растущем рынке, где регуляторный ветер дует в спину.
+      Ограничение роста — не спрос, а операционный потолок: бумажные журналы, ручной
+      контроль сроков и график, который не совпадает с сезоном охоты. Это предложение
+      о том, как этот потолок снять.
+    </p>
+
+    <div class="meta">
+      <div><span class="k">Кому</span><span class="v">ТОО «Оружейка+»</span></div>
+      <div><span class="k">Адрес</span><span class="v">Алматы, ул. Масанчи, 23 лит. 3</span></div>
+      <div><span class="k">Предмет</span><span class="v">Кастомная CRM/ERP для ПЦХО</span></div>
+      <div><span class="k">Первый шаг</span><span class="v">Discovery-спринт, 2 недели</span></div>
+      <div><span class="k">Срок действия</span><span class="v">30 календарных дней</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <nav class="toc" aria-label="Содержание">
+    <p class="eyebrow">Содержание</p>
+    <ol>
+      <li><a href="#s1">Что мы поняли о бизнесе</a></li>
+      <li><a href="#s2">Рынок и потенциал</a></li>
+      <li><a href="#s3">Восемь узких мест</a></li>
+      <li><a href="#s4">Почему коробочная CRM не подходит</a></li>
+      <li><a href="#s5">Шесть решений, которых нет нигде</a></li>
+      <li><a href="#s6">Двенадцать модулей</a></li>
+      <li><a href="#s7">Пакеты и стоимость</a></li>
+      <li><a href="#s8">Экономика проекта</a></li>
+      <li><a href="#s9">План внедрения</a></li>
+      <li><a href="#s10">Риски</a></li>
+      <li><a href="#s11">Из затрат в продукт</a></li>
+    </ol>
+  </nav>
+
+  <!-- ================= 1 ================= -->
+  <section id="s1">
+    <div class="sec-head">
+      <span class="num">Раздел 01</span>
+      <h2>Что мы поняли о вашем бизнесе</h2>
+    </div>
+
+    <div class="prose stack">
+      <p>
+        «Оружейка+» — не розничный магазин. Это регулируемая операционная услуга с
+        абонентской моделью выручки. Отсюда три следствия, которые полностью
+        определяют требования к системе.
+      </p>
+    </div>
+
+    <div class="cards" style="margin-top:24px">
+      <div class="card">
+        <h3>Учётная единица — не товар</h3>
+        <p>
+          Два одинаковых ружья одной модели — это два разных объекта с разными
+          серийными номерами, разными владельцами и разными сроками. Товарный учёт
+          здесь неприменим в принципе.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Деньги приносит удержание</h3>
+        <p>
+          Выручка абонентская. Клиент, ушедший через год, стоит дороже, чем клиент,
+          который не пришёл. Значит, центр системы — не воронка продаж, а
+          обслуживание после сделки.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Ошибка стоит лицензии</h3>
+        <p>
+          Разрешение на ПЦХО выдано органами внутренних дел на имя руководителя.
+          Выдача по недействующему документу — это не убыток, а персональная
+          ответственность.
+        </p>
+      </div>
+    </div>
+
+    <div class="prose stack" style="margin-top:28px">
+      <h3 class="sub">Регуляторный контур, который система обязана держать</h3>
+    </div>
+    <div class="tablewrap" style="margin-top:14px">
+      <table>
+        <thead>
+          <tr><th>Требование законодательства РК</th><th>Что из этого следует для системы</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Разрешение выдаётся и продлевается на <strong>5 лет</strong></td><td>Пятилетний таймер по каждому владельцу и каскад напоминаний</td></tr>
+          <tr><td>Требуется медзаключение <strong>форма 076/У</strong></td><td>Отдельный срок годности документа и отдельный таймер</td></tr>
+          <tr><td>Введён <strong>контрольный отстрел</strong> нарезного оружия</td><td>Периодический статус у каждой нарезной единицы</td></tr>
+          <tr><td>Разрешения оформляются онлайн через eGov / elicense.kz</td><td>Возможность вести клиента по чек-листу и продавать услугу продления</td></tr>
+          <tr><td>ПЦХО — объект, уязвимый в террористическом отношении; видеонаблюдение подключено к ЦОУ полиции</td><td>Требования к журналам, инцидентам и привязке событий к видеозаписи</td></tr>
+          <tr><td>Юрлица при приостановке деятельности сдают оружие в ОВД за 10 рабочих дней</td><td>Отдельный сценарий для корпоративных клиентов и ЧОО</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 2 ================= -->
+  <section id="s2">
+    <div class="sec-head">
+      <span class="num">Раздел 02</span>
+      <h2>Рынок и потенциал</h2>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><span class="n">30 536</span><span class="l">охотников зарегистрировано в ДП города Алматы</span></div>
+      <div class="stat"><span class="n">~250 000</span><span class="l">единиц гражданского оружия у населения РК</span></div>
+      <div class="stat"><span class="n">~44 000</span><span class="l">владельцев гражданского оружия в стране</span></div>
+      <div class="stat"><span class="n">2</span><span class="l">заметных конкурента-ПЦХО в Алматы</span></div>
+    </div>
+
+    <div class="prose stack" style="margin-top:26px">
+      <p>
+        Тридцать тысяч охотников только в Алматы — и каждый по закону обязан
+        обеспечить условия хранения. Полноценных ПЦХО в городе единицы. Даже при
+        проникновении услуги в 5–8 % адресуемый рынок города — это
+        <strong>1 500–2 400 единиц на централизованном хранении</strong>.
+      </p>
+      <p>
+        Главное здесь — направление ветра. Каждое ужесточение правил делает
+        домашнее хранение дороже и хлопотнее: контрольный отстрел, требования к
+        сейфам, проверки условий хранения по месту жительства. Каждая такая мера
+        напрямую переливает клиентов в ПЦХО. <strong>Рынок растёт не вопреки
+        регулированию, а благодаря ему.</strong>
+      </p>
+      <p>
+        При этом отраслевого программного обеспечения для ПЦХО в Казахстане нет —
+        ни у вас, ни у конкурентов. Это значит, что операционное преимущество здесь
+        пока никем не занято.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 3 ================= -->
+  <section id="s3">
+    <div class="sec-head">
+      <span class="num">Раздел 03</span>
+      <h2>Восемь узких мест, которые видно снаружи</h2>
+    </div>
+    <div class="prose stack" style="margin-bottom:22px">
+      <p>
+        Это наблюдения по открытым данным и типовой практике ПЦХО. Каждое проверяется
+        одним вопросом на встрече — и каждое либо снимается, либо становится
+        приоритетом первой очереди.
+      </p>
+    </div>
+
+    <div class="pains">
+      <div class="pain">
+        <span class="n">01</span>
+        <h3>График против сезона</h3>
+        <p>10:00–18:30 с перерывом на обед. Охота начинается затемно, а на открытии сезона за стволами приезжают все и в один день. График не совпадает со спросом, а расширять его — значит платить за часы, в которые обычно пусто.</p>
+      </div>
+      <div class="pain">
+        <span class="n">02</span>
+        <h3>Бумажные журналы приёма и выдачи</h3>
+        <p>Вопрос «когда Иванов последний раз забирал ружьё» решается листанием. При проверке — стопка бумаги на стол.</p>
+      </div>
+      <div class="pain">
+        <span class="n">03</span>
+        <h3>Ручной контроль сроков</h3>
+        <p>На каждого клиента параллельно тикают разрешение, медсправка, договор, оплата, для нарезного — контрольный отстрел. При 500 клиентах это более двух тысяч таймеров. В таблице они не контролируются — они обнаруживаются.</p>
+      </div>
+      <div class="pain">
+        <span class="n">04</span>
+        <h3>Риск выдачи по недействующему разрешению</h3>
+        <p>Самый дорогой риск в бизнесе. Сегодня единственная защита — внимательность администратора в конце смены.</p>
+      </div>
+      <div class="pain">
+        <span class="n">05</span>
+        <h3>Абонплата в таблицах</h3>
+        <p>Начисления, частичные оплаты, долги, пролонгация, разные тарифы. Ручной биллинг — это потерянная выручка, которую никто не считает, потому что её не видно.</p>
+      </div>
+      <div class="pain">
+        <span class="n">06</span>
+        <h3>«Где физически лежит этот ствол»</h3>
+        <p>Комната, стеллаж, ячейка. С ростом базы поиск конкретной единицы и годовая инвентаризация превращаются в работу на несколько дней.</p>
+      </div>
+      <div class="pain">
+        <span class="n">07</span>
+        <h3>Отчётность и проверки</h3>
+        <p>Сводки, досье объекта, журналы. Каждая проверка — это дни подготовки вместо операционной работы.</p>
+      </div>
+      <div class="pain">
+        <span class="n">08</span>
+        <h3>Весь трафик клиентов — вручную в мессенджерах</h3>
+        <p>«Сколько я должен», «когда истекает разрешение», «можно завтра забрать» — сотни однотипных сообщений в Instagram, WhatsApp и Telegram, которые обрабатывает живой человек. Это основная скрытая статья расходов.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 4 ================= -->
+  <section id="s4">
+    <div class="sec-head">
+      <span class="num">Раздел 04</span>
+      <h2>Почему коробочная CRM здесь не работает</h2>
+    </div>
+
+    <div class="prose stack" style="margin-bottom:20px">
+      <p>
+        Коробочные CRM спроектированы вокруг <strong>воронки сделок</strong>. У ПЦХО
+        воронка короткая и почти не важна — вся сложность начинается <em>после</em>
+        сделки. Это принципиально другая модель данных, а не набор кастомных полей.
+      </p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Что реально нужно ПЦХО</th>
+            <th class="mid">amoCRM / Битрикс24</th>
+            <th class="mid">1С</th>
+            <th class="mid">Арсенал</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Номерной учёт единицы с историей владения</td><td class="mid no">нет</td><td class="mid no">партионный, не по экземплярам</td><td class="mid yes">да</td></tr>
+          <tr><td>Неизменяемый юридически значимый журнал операций</td><td class="mid no">нет</td><td class="mid no">записи правятся</td><td class="mid yes">да</td></tr>
+          <tr><td>Блокировка выдачи при недействующем разрешении</td><td class="mid no">нет</td><td class="mid no">нет</td><td class="mid yes">да</td></tr>
+          <tr><td>Каскад сроков: разрешение, медсправка, отстрел, договор</td><td class="mid no">только как задачи</td><td class="mid no">нет</td><td class="mid yes">да</td></tr>
+          <tr><td>Топология хранилища и QR-инвентаризация</td><td class="mid no">нет</td><td class="mid no">склад без привязки к номерам</td><td class="mid yes">да</td></tr>
+          <tr><td>Абонентский биллинг с Kaspi</td><td class="mid no">нет</td><td class="mid no">доработка</td><td class="mid yes">да</td></tr>
+          <tr><td>Кабинет владельца и бот самообслуживания</td><td class="mid no">нет</td><td class="mid no">нет</td><td class="mid yes">да</td></tr>
+          <tr><td>Временный доступ для проверяющего</td><td class="mid no">нет</td><td class="mid no">нет</td><td class="mid yes">да</td></tr>
+          <tr><td>Планирование под сезон охоты</td><td class="mid no">нет</td><td class="mid no">нет</td><td class="mid yes">да</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 5 ================= -->
+  <section id="s5">
+    <div class="sec-head">
+      <span class="num">Раздел 05</span>
+      <h2>Шесть решений, которых нет ни в одной готовой системе</h2>
+    </div>
+    <div class="prose stack" style="margin-bottom:24px">
+      <p>Это ядро предложения. Всё остальное — инфраструктура вокруг него.</p>
+    </div>
+
+    <div class="stack-lg">
+
+      <article class="feat">
+        <div class="feat-top"><span class="feat-n">01</span><h3>Неизменяемый журнал с доказуемой целостностью</h3></div>
+        <p>
+          Каждая операция приёма и выдачи записывается один раз и не редактируется.
+          Каждая запись содержит криптографический отпечаток предыдущей — получается
+          цепочка, в которую нельзя незаметно вставить или изменить запись задним
+          числом. Ошибка исправляется корректирующей записью, а не правкой.
+        </p>
+        <p class="why">
+          <b>Зачем:</b> при проверке вы показываете не просто журнал, а журнал,
+          целостность которого проверяема математически. В amoCRM, Битрикс24 и 1С
+          любая запись правится — именно поэтому бумажная тетрадь до сих пор
+          считается надёжнее электронной таблицы.
+        </p>
+      </article>
+
+      <article class="feat">
+        <div class="feat-top"><span class="feat-n">02</span><h3>Compliance Gate — выдача, которую нельзя провести с нарушением</h3></div>
+        <p>
+          Перед каждой выдачей система за секунду проверяет весь набор условий:
+          действительность разрешения, срок медсправки, договор, задолженность,
+          контрольный отстрел, соответствие единицы разрешению, личность получателя,
+          доверенность. И выдаёт один из трёх статусов.
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <span class="pill ok">Зелёный — выдача в обычном режиме</span>
+          <span class="pill warn">Жёлтый — выдача с фиксацией предупреждения</span>
+          <span class="pill crit">Красный — выдача заблокирована</span>
+        </div>
+        <p class="why">
+          <b>Зачем:</b> снять красный статус может только руководитель, с обязательным
+          указанием основания, и это тоже попадёт в журнал. Разрешение на ПЦХО выдано
+          на ваше имя — мы заменяем внимательность администратора на правило системы.
+        </p>
+      </article>
+
+      <article class="feat">
+        <div class="feat-top"><span class="feat-n">03</span><h3>Планирование под сезон охоты</h3></div>
+        <p>
+          В систему заведён календарь сезонов по Алматинской области и видам дичи.
+          Система знает, что через две недели открытие, заранее показывает прогноз
+          пиковой нагрузки и сама предлагает клиентам забронировать слот. Заявка
+          накануне — ствол готов к шести утра, выдача занимает минуту.
+        </p>
+        <p class="why">
+          <b>Зачем:</b> прямой ответ на конфликт между графиком 10:00–18:30 и охотой,
+          которая начинается затемно. Вы обслуживаете утренний спрос, не переходя на
+          круглосуточный режим и не расширяя штат.
+        </p>
+      </article>
+
+      <article class="feat">
+        <div class="feat-top"><span class="feat-n">04</span><h3>Режим инспектора</h3></div>
+        <p>
+          Временная ссылка с ограниченным сроком действия и правами только на чтение.
+          Проверяющий смотрит данные сам — без распечаток, без доступа к
+          редактированию, с логированием каждого просмотра. Плюс предпроверочный
+          самоаудит: система показывает, что не в порядке, до того как это увидит
+          проверяющий.
+        </p>
+        <p class="why">
+          <b>Зачем:</b> проверка перестаёт быть событием, к которому готовятся неделю.
+        </p>
+      </article>
+
+      <article class="feat">
+        <div class="feat-top"><span class="feat-n">05</span><h3>Автопилот продлений: боль клиента как ваша выручка</h3></div>
+        <p>
+          За 90 дней до истечения разрешения клиент получает не просто напоминание,
+          а чек-лист документов, ссылки на eGov и предложение «оформим за вас» с
+          ценой. Разрешение действует пять лет — значит, каждый год примерно пятая
+          часть вашей базы проходит через продление.
+        </p>
+        <p class="why">
+          <b>Зачем:</b> новая статья дохода, которая возникает сама из данных, уже
+          лежащих в системе. Ни одна CRM в мире не знает, что такое форма 076/У.
+        </p>
+      </article>
+
+      <article class="feat">
+        <div class="feat-top"><span class="feat-n">06</span><h3>Площадка переоформления между владельцами</h3></div>
+        <p>
+          Оружие клиента уже физически у вас. Если он решил его продать, покупателю
+          с действующим разрешением достаточно приехать: сделка и передача
+          оформляются на месте, система ведёт комплаенс обеих сторон и переписывает
+          историю владения без разрыва цепочки.
+        </p>
+        <p class="why">
+          <b>Зачем:</b> новый источник выручки на инфраструктуре, которая у вас уже
+          есть. Вы становитесь не только хранилищем, но и точкой вторичного оборота.
+        </p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= 6 ================= -->
+  <section id="s6">
+    <div class="sec-head">
+      <span class="num">Раздел 06</span>
+      <h2>Двенадцать модулей системы</h2>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:52px">№</th><th>Модуль</th>
+            <th class="mid">Ядро</th><th class="mid">Оптимум</th><th class="mid">Платформа</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="num">M1</td><td>Реестр владельцев и единиц оружия по серийным номерам</td><td class="mid yes">✓</td><td class="mid yes">✓</td><td class="mid yes">✓</td></tr>
+          <tr><td class="num">M2</td><td>Приём и выдача, цепочка ответственного хранения</td><td class="mid yes">✓</td><td class="mid yes">✓</td><td class="mid yes">✓</td></tr>
+          <tr><td class="num">M3</td><td>Compliance Gate — светофор допуска</td><td class="mid yes">✓</td><td class="mid yes">✓</td><td class="mid yes">✓</td></tr>
+          <tr><td class="num">M4</td><td>Календарь сроков и автопилот продлений</td><td class="mid yes">✓</td><td class="mid yes">✓</td><td class="mid yes">✓</td></tr>
+          <tr><td class="num">M5</td><td>Биллинг абонемента, интеграция с Kaspi</td><td class="mid yes">✓</td><td class="mid yes">✓</td><td class="mid yes">✓</td></tr>
+          <tr><td class="num">M6</td><td>Топология хранилища и QR-инвентаризация</td><td class="mid no">—</td><td class="mid yes">✓</td><td class="mid yes">✓</td></tr>
+          <tr><td class="num">M7</td><td>Кабинет владельца и бот в WhatsApp/Telegram</td><td class="mid no">—</td><td class="mid yes">✓</td><td class="mid yes">✓</td></tr>
+          <tr><td class="num">M8</td><td>Слоты выдачи и сезонный планировщик</td><td class="mid no">—</td><td class="mid yes">✓</td><td class="mid yes">✓</td></tr>
+          <tr><td class="num">M9</td><td>Отчётность, досье объекта, режим инспектора</td><td class="mid no">—</td><td class="mid yes">✓</td><td class="mid yes">✓</td></tr>
+          <tr><td class="num">M10</td><td>Инциденты и привязка событий к видеонаблюдению</td><td class="mid no">—</td><td class="mid no">—</td><td class="mid yes">✓</td></tr>
+          <tr><td class="num">M11</td><td>Аналитика: ёмкость, LTV, предиктивный отток</td><td class="mid no">—</td><td class="mid no">—</td><td class="mid yes">✓</td></tr>
+          <tr><td class="num">M12</td><td>Мультиплощадочность, White Label, SaaS</td><td class="mid no">—</td><td class="mid no">—</td><td class="mid yes">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prose stack" style="margin-top:26px">
+      <h3 class="sub">Что обязательно вне зависимости от пакета</h3>
+      <p>
+        <strong>Офлайн-режим</strong> — при потере интернета приём и выдача продолжаются,
+        синхронизация после восстановления связи. Для склада это не опция, а условие
+        работы. <strong>Два языка</strong> — қазақша и русский, включая печатные формы.
+        <strong>Хранение данных на территории Казахстана</strong> — требование
+        законодательства о персональных данных. <strong>Работа с планшета и телефона</strong> —
+        сотрудник ходит по хранилищу, а не сидит за столом. <strong>Исходный код
+        передаётся вам</strong> — привязки к подрядчику нет.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 7 ================= -->
+  <section id="s7">
+    <div class="sec-head">
+      <span class="num">Раздел 07</span>
+      <h2>Пакеты и стоимость</h2>
+    </div>
+
+    <div class="callout">
+      <p class="eyebrow">Начать стоит отсюда</p>
+      <h3>Discovery-спринт</h3>
+      <p class="amount">450 000 ₸ · 2 недели</p>
+      <p>
+        Два дня в вашем хранилище, интервью с администраторами и руководителем, разбор
+        реальных журналов и тарифов. На выходе — техническое задание, прототип ключевых
+        экранов, точная смета и план внедрения.
+      </p>
+      <p>
+        <strong>Стоимость спринта полностью засчитывается в цену любого пакета.</strong>
+        Если после спринта вы решаете не продолжать — техническое задание и прототип
+        остаются у вас.
+      </p>
+    </div>
+
+    <div class="prices" style="margin-top:18px">
+      <div class="price">
+        <span class="tag">Пакет 1</span>
+        <h3>Ядро</h3>
+        <p class="amount">4 200 000 ₸</p>
+        <p class="term">10–12 недель · модули M1–M5</p>
+        <p>Система, на которой можно вести реальную операцию с первого дня.</p>
+        <ul>
+          <li>Реестр владельцев и стволов</li>
+          <li>Приём и выдача с неизменяемым журналом</li>
+          <li>Compliance Gate</li>
+          <li>Контроль всех сроков</li>
+          <li>Биллинг и Kaspi</li>
+          <li>Обучение, перенос базы, месяц сопровождения запуска</li>
+        </ul>
+      </div>
+
+      <div class="price pick">
+        <span class="tag">Пакет 2 · рекомендуем</span>
+        <h3>Оптимум</h3>
+        <p class="amount">8 600 000 ₸</p>
+        <p class="term">18–20 недель · модули M1–M9</p>
+        <p>Добавляет то, что даёт рост, а не только порядок.</p>
+        <ul>
+          <li>Всё из «Ядра»</li>
+          <li>Кабинет владельца и бот самообслуживания</li>
+          <li>Слоты и сезонное планирование</li>
+          <li>QR-инвентаризация хранилища</li>
+          <li>Отчётность и режим инспектора</li>
+        </ul>
+      </div>
+
+      <div class="price">
+        <span class="tag">Пакет 3</span>
+        <h3>Платформа</h3>
+        <p class="amount">14 500 000 ₸</p>
+        <p class="term">26–30 недель · все 12 модулей</p>
+        <p>Техническая база для тиражирования системы на другие ПЦХО.</p>
+        <ul>
+          <li>Всё из «Оптимума»</li>
+          <li>Мультиплощадочность</li>
+          <li>Аналитика и предиктивный отток</li>
+          <li>Интеграция с видеонаблюдением</li>
+          <li>Мультиарендная архитектура и White Label</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="prose stack" style="margin-top:26px">
+      <h3 class="sub">Сопровождение — от 210 000 ₸ в месяц</h3>
+      <p>
+        Хостинг, резервное копирование, мониторинг, техподдержка и —
+        главное — <strong>обновления системы под изменения законодательства</strong>.
+        Правила оборота оружия меняются, и система должна меняться вместе с ними.
+      </p>
+      <h3 class="sub">Переход между пакетами</h3>
+      <p>
+        «Ядро» → «Оптимум» — 4 800 000 ₸. «Оптимум» → «Платформа» — 6 400 000 ₸.
+        Начать с малого и нарастить дороже разового решения примерно на 5–10 %, зато
+        снимает риск. Это нормальный выбор, и мы его не отговариваем.
+      </p>
+      <p>Все цены в тенге с учётом налогов. Оплата поэтапная, по закрытым этапам.</p>
+    </div>
+  </section>
+
+  <!-- ================= 8 ================= -->
+  <section id="s8">
+    <div class="sec-head">
+      <span class="num">Раздел 08</span>
+      <h2>Экономика проекта</h2>
+    </div>
+
+    <div class="prose stack" style="margin-bottom:20px">
+      <p>
+        Расчёт на модельной базе. <strong>Все входные цифры — допущения</strong>, они
+        уточняются на discovery-спринте по вашим реальным данным и напрямую влияют на
+        итоговый вывод.
+      </p>
+      <p>
+        Допущения: 900 единиц на хранении, средний чек 3 500 ₸ за единицу в месяц,
+        годовой отток 18 %, администратор с фондом 200 000 ₸ в месяц. Годовая
+        выручка при таких вводных — около 37,8 млн ₸.
+      </p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Источник эффекта</th><th>За счёт чего</th><th class="num">Эффект в год</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Снижение оттока на 3 п.п.</td><td>Напоминания, кабинет, ранние сигналы ухода клиента</td><td class="num">+1 130 000 ₸</td></tr>
+          <tr><td>Услуга «продление под ключ»</td><td>~45 клиентов в год × 20 000 ₸</td><td class="num">+900 000 ₸</td></tr>
+          <tr><td>Рост базы на 12 %</td><td>Слоты, бот, самообслуживание, ранние выдачи</td><td class="num">+2 270 000 ₸</td></tr>
+          <tr><td>Экономия рабочего времени</td><td>2,5 часа в день администратора</td><td class="num">+1 680 000 ₸</td></tr>
+          <tr class="total"><td>Итого измеримый эффект</td><td>—</td><td class="num">≈ 5 980 000 ₸</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="stats" style="margin-top:18px">
+      <div class="stat"><span class="n">8–9 мес.</span><span class="l">окупаемость пакета «Ядро»</span></div>
+      <div class="stat"><span class="n">~17 мес.</span><span class="l">окупаемость пакета «Оптимум»</span></div>
+      <div class="stat"><span class="n">не оценено</span><span class="l">снижение риска для лицензии — стоит дороже всего перечисленного</span></div>
+    </div>
+
+    <div class="prose stack" style="margin-top:24px">
+      <p>
+        Последняя строка — главная. Одна выдача по недействующему разрешению может
+        стоить бизнеса целиком, и никакая экономия часов с этим не сравнится.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 9 ================= -->
+  <section id="s9">
+    <div class="sec-head">
+      <span class="num">Раздел 09</span>
+      <h2>План внедрения</h2>
+    </div>
+
+    <div class="steps">
+      <div class="step core"><span class="n">01</span><span class="t">Discovery: ТЗ, прототип, точная смета</span><span class="d">2 недели</span></div>
+      <div class="step core"><span class="n">02</span><span class="t">Ядро: реестр, приём и выдача работают в системе</span><span class="d">4 недели</span></div>
+      <div class="step core"><span class="n">03</span><span class="t">Ядро: Compliance Gate, сроки, биллинг</span><span class="d">4 недели</span></div>
+      <div class="step core"><span class="n">04</span><span class="t">Перенос базы и обучение персонала</span><span class="d">2 недели</span></div>
+      <div class="step"><span class="n">05</span><span class="t">Опытная эксплуатация и стабилизация</span><span class="d">4 недели</span></div>
+      <div class="step"><span class="n">06</span><span class="t">Кабинет владельца и бот самообслуживания</span><span class="d">4 недели</span></div>
+      <div class="step"><span class="n">07</span><span class="t">Слоты выдачи и сезонное планирование</span><span class="d">3 недели</span></div>
+      <div class="step"><span class="n">08</span><span class="t">Отчётность и режим инспектора</span><span class="d">3 недели</span></div>
+    </div>
+
+    <div class="prose stack" style="margin-top:20px">
+      <p>
+        Выделенные этапы — минимальный путь до работающей системы:
+        <strong>около трёх месяцев</strong> от старта до момента, когда приём и выдача
+        полностью ведутся в «Арсенале».
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 10 ================= -->
+  <section id="s10">
+    <div class="sec-head">
+      <span class="num">Раздел 10</span>
+      <h2>Риски и как мы их снимаем</h2>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Риск</th><th>Что делаем</th></tr></thead>
+        <tbody>
+          <tr><td>Персонал не примет систему</td><td>Приём и выдача проектируются под 2–3 минуты. Если операция медленнее бумаги — её не примут. Это критерий приёмки, а не пожелание</td></tr>
+          <tr><td>Изменится законодательство</td><td>Гибкая модель справочников; обновления под изменения входят в сопровождение</td></tr>
+          <tr><td>Утечка персональных данных</td><td>Хранение в РК, шифрование, журнал доступа к данным, роли, двухфакторная аутентификация</td></tr>
+          <tr><td>Пропадёт интернет</td><td>Полноценный офлайн-режим с синхронизацией после восстановления связи</td></tr>
+          <tr><td>Зависимость от подрядчика</td><td>Исходный код передаётся вам, с документацией. Проект может продолжить любая другая команда</td></tr>
+          <tr><td>Проект окажется дороже пользы</td><td>Discovery-спринт за 450 000 ₸ даёт точную смету до основных вложений</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 11 ================= -->
+  <section id="s11">
+    <div class="sec-head">
+      <span class="num">Раздел 11</span>
+      <h2>Стратегическая опция: из затрат в продукт</h2>
+    </div>
+
+    <div class="prose stack">
+      <p>
+        Отраслевого софта для ПЦХО в Казахстане нет, а нормативная база — единая на
+        всю страну. Пункты централизованного хранения работают в Астане, Актобе,
+        Караганде, Шымкенте, и у каждого те же журналы, те же сроки, те же проверки.
+      </p>
+      <p>
+        Пакет «Платформа» изначально строится мультиарендным. Это значит, что после
+        внедрения у себя «Оружейка+» может продавать «Арсенал» другим ПЦХО по
+        подписке — <strong>без переписывания системы</strong>.
+      </p>
+    </div>
+
+    <div class="stats" style="margin-top:22px">
+      <div class="stat"><span class="n">150 000 ₸</span><span class="l">подписка на одну организацию в месяц</span></div>
+      <div class="stat"><span class="n">× 10</span><span class="l">подключённых ПЦХО по стране</span></div>
+      <div class="stat"><span class="n">18 млн ₸</span><span class="l">в год — больше стоимости самого пакета</span></div>
+    </div>
+
+    <div class="prose stack" style="margin-top:24px">
+      <p>
+        Мы готовы обсуждать участие в этом направлении на условиях разделения выручки —
+        это снижает вашу первоначальную стоимость разработки.
+      </p>
+      <p>
+        Это не обязательная часть предложения. Но если строить систему, то сразу так,
+        чтобы такая опция осталась открытой.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= CTA ================= -->
+  <div class="cta">
+    <p class="eyebrow">Что дальше</p>
+    <h2>Три шага, первый — бесплатный</h2>
+    <ol>
+      <li><strong>Встреча на 40 минут.</strong> Покажем прототип ключевых экранов, ответим на вопросы и уточним, что из описанного вам действительно нужно, а что лишнее.</li>
+      <li><strong>Discovery-спринт: 2 недели, 450 000 ₸.</strong> Точное техническое задание и смета. Полностью засчитывается в стоимость пакета.</li>
+      <li><strong>Старт разработки.</strong> Готовы начать в течение недели после согласования.</li>
+    </ol>
+  </div>
+
+  <p class="note">
+    Предложение подготовлено на основании анализа открытых источников: карточек 2ГИС и
+    Яндекс.Карт, сайта oruzheika-plus.kz, портала egov.kz, ИПС «Әділет» и отраслевых
+    публикаций. Данные по базе клиентов, тарифам и текущим процессам — модельные
+    допущения; они уточняются на discovery-спринте и влияют на итоговую смету.
+    Срок действия предложения — 30 календарных дней с 11 августа 2026 года.
+  </p>
+
+</div>
